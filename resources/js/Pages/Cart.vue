@@ -21,9 +21,9 @@ export default {
       return parseFloat(price).toFixed(2)
     },
 
-    handleImageError(event) {
-      event.target.src = '/images/placeholder.jpg'
-    },
+    // handleImageError(event) {
+    //   event.target.src = '/images/placeholder.jpg'
+    // },
 
     updateQuantity(item, newQuantity) {
       if (newQuantity < 1) return
@@ -31,6 +31,7 @@ export default {
       router.patch(`/cart/update/${item.id}`, {
         quantity: newQuantity
       }, {
+        preserveScroll: true,
         onSuccess: () => {
           this.showMessage('Cart updated successfully', 'success')
         },
@@ -43,6 +44,7 @@ export default {
     removeItem(item) {
       if (confirm('Are you sure you want to remove this item from your cart?')) {
         router.delete(`/cart/remove/${item.product_id}`, {
+          preserveScroll: true,
           onSuccess: () => {
             this.showMessage('Item removed from cart', 'success')
           },
@@ -55,6 +57,7 @@ export default {
 
     clearCart() {
       if (confirm('Are you sure you want to clear your entire cart?')) {
+        preserveScroll: true,
         router.delete('/cart/clear', {
           onSuccess: () => {
             this.showMessage('Cart cleared successfully', 'success')
@@ -113,9 +116,8 @@ export default {
               >
                 <div class="item-image">
                   <img 
-                    :src="item.image_url || '/images/placeholder.jpg'" 
+                    :src="item.image_url" 
                     :alt="item.name"
-                    @error="handleImageError"
                   />
                 </div>
 

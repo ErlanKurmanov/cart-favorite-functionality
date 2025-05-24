@@ -18,22 +18,19 @@ export default {
       isLoading: false
     }
   },
-  methods: {
-    formatPrice(price) {
-      return parseFloat(price).toFixed(2)
-    },
-    
-    truncateDescription(description, maxLength = 120) {
-      if (description.length <= maxLength) {
-        return description
-      }
-      return description.substring(0, maxLength) + '...'
-    },
-
-    handleImageError(event) {
-      event.target.src = '/images/placeholder.jpg'
+methods: {
+  formatPrice(price) {
+    return parseFloat(price).toFixed(2)
+  },
+  
+  truncateDescription(description, maxLength = 120) {
+    if (description.length <= maxLength) {
+      return description
     }
-  }
+    return description.substring(0, maxLength) + '...'
+  },
+
+}
 }
 </script>
 
@@ -41,9 +38,9 @@ export default {
   <div class="product-card">
     <div class="product-image">
       <img 
-        :src="product.image_url || '/images/placeholder.jpg'" 
+        :src="product.image_url" 
         :alt="product.name"
-        @error="handleImageError"
+        
       />
       <button 
         @click="$emit('toggle-favorite', product)"
@@ -81,12 +78,12 @@ export default {
         {{ isLoading ? 'Adding...' : 'Add to Cart' }}
       </button>
       
-      <Link 
+      <!-- <Link 
         :href="`/products/${product.id}`" 
         class="view-details-btn"
       >
         View Details
-      </Link>
+      </Link> -->
     </div>
   </div>
 </template>
@@ -222,25 +219,6 @@ export default {
   transform: none;
 }
 
-.view-details-btn {
-  background: transparent;
-  color: #3498db;
-  border: 2px solid #3498db;
-  padding: 0.8rem 1.2rem;
-  border-radius: 8px;
-  text-decoration: none;
-  text-align: center;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-}
-
-.view-details-btn:hover {
-  background-color: #3498db;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -278,8 +256,7 @@ export default {
     padding: 0 1rem 1rem;
   }
   
-  .add-to-cart-btn,
-  .view-details-btn {
+  .add-to-cart-btn {
     padding: 0.7rem 1rem;
     font-size: 0.9rem;
   }

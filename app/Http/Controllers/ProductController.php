@@ -28,7 +28,7 @@ class ProductController extends Controller
     public function index(): Response
     {
         $products = $this->productService->getAllProducts();
-//        dd($products);
+
         return Inertia::render('Home', [
             'products' => $products
         ]);
@@ -90,9 +90,7 @@ class ProductController extends Controller
         $data = $request->validated();
         $product = $this->productService->createProduct($data);
 
-        return redirect()->route('products.show', $product->id)->with('success', 'Product created successfully!');
-        // Or redirect to the product index:
-        // return redirect()->route('products.index')->with('success', 'Product created successfully!');
+        return redirect()->route('', $product->id)->with('success', 'Product created successfully!');
     }
 
     /**

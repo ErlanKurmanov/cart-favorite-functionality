@@ -3,10 +3,7 @@
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', [ProductController::class, 'index']);
 //Route::get('/', function () {
@@ -19,9 +16,10 @@ Route::patch('/cart/update/{id}', [CartController::class, 'updateItem']);
 Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem']);
 Route::delete('/cart/clear', [CartController::class, 'clearAll']);
 
-Route::get('/favorites', [FavoriteController::class, 'getUserFavorites'])->name('favorites.index');
-Route::post('/favorites/add/{product}', [FavoriteController::class, 'addFavorite'])->name('favorites.add');
-Route::delete('/favorites/remove/{product}', [FavoriteController::class, 'removeFavorite'])->name('favorites.remove');
+Route::get('/favorites', [FavoriteController::class, 'index']);
+Route::post('/favorites/add/{product}', [FavoriteController::class, 'addFavorite']);
+Route::post('/favorites/remove/{product}', [FavoriteController::class, 'removeFavorite']);
+Route::post('/favorites/clear', [FavoriteController::class, 'clear']);
 
 //Route::get('/', function () {
 //    return Inertia::render('Welcome', [

@@ -9,6 +9,7 @@ use Illuminate\Http\Response; // Still useful for certain HTTP status codes, tho
 use App\Contracts\Services\CartServiceInterface;
 use App\Http\Requests\Cart\AddCartItemRequest;
 use App\Http\Resources\CartResource; // Still useful for transforming data before passing it to Vue.
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia; // The star of the show for Inertia.js
 
 /**
@@ -38,23 +39,14 @@ class CartController extends Controller
      */
     public function index(): \Inertia\Response
     {
-        try {
-            $cart = $this->cartService->show();
-            return Inertia::render('Cart', [
-                'cart' => new CartResource($cart), // Transform cart data using your resource
-                'successMessage' => session('success'), // Example: flash messages for success
-                'errorMessage' => session('error'),     // Example: flash messages for errors
-            ]);
-        } catch (\Exception $e) {
-            // For errors that prevent rendering, you might redirect back with an error message
-            // or render a generic error page.
-//            return Inertia::render('Error', [ // Assuming you have an Error.vue component
-//                'message' => 'Failed to retrieve cart. Please try again.',
-//                'status' => Response::HTTP_INTERNAL_SERVER_ERROR,
-//                'debug' => config('app.debug') ? $e->getMessage() : null,
-//            ]);
-            dd($e->getMessage(), $e->getTraceAsString());
-        }
+
+        $cart = $this->cartService->show();
+        return Inertia::render('Cart', [
+            'cart' => new CartResource($cart), // Transform cart data using your resource
+            'successMessage' => session('success'), // Example: flash messages for success
+            'errorMessage' => session('error'),     // Example: flash messages for errors
+        ]);
+
     }
 
     /**
@@ -71,12 +63,10 @@ class CartController extends Controller
 
             $cart = $this->cartService->addItem($itemData);
 
-//            return redirect()->route('cart.index')->with('success', 'Item added to cart successfully!');
-
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
                 'cart_add_error' => config('app.debug') ? $e->getMessage() : 'Failed to add item to cart. Please try again.',
-            ])->withInput(); // Keep old input if desired
+            ]);
         }
     }
 
@@ -91,7 +81,6 @@ class CartController extends Controller
     {
         try {
             $cart = $this->cartService->removeItem($id);
-//            return redirect()->route('cart.index')->with('success', 'Item removed from cart successfully!');
         } catch (\Exception $e) {
             // Redirect back with an error message
             return redirect()->back()->withErrors([
@@ -107,11 +96,10 @@ class CartController extends Controller
                  'quantity' => 'required'
              ]);
 
-             $cart = User::find(1)->cart()->firstOrCreate();
+             $cart = Auth::user()->cart()->firstOrCreate();
              $cart->items()->find($id)->update([
                  'quantity' => $itemData['quantity']
              ]);
-//             return redirect()->route('cart.index')->with('success', 'Cart updated successfully!');
          } catch (\Exception $e) {
              return redirect()->back()->withErrors(['cart_update_error' => 'Failed to update item.']);
          }
@@ -119,7 +107,7 @@ class CartController extends Controller
 
     public function clearAll()
     {
-        $cart = User::find(1)->cart()->firstOrCreate();
+        $cart = Auth::user()->cart()->firstOrCreate();
         $cart->items()->delete();
    }
 }

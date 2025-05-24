@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\Services\FavoriteServiceInterface;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,27 @@ class FavoriteController extends Controller
         $this->favoriteService = $favoriteService;
     }
 
+    public function index()
+    {
+        $user = Auth::user(); // Get the currently authenticated user
+
+        $favorites = $user->favoriteItems()->with('category')->get();
+        $categories = Category::all();
+        $cartItemsCount = optional($user->cart)->items->sum('quantity') ?? 0;
+
+        return Inertia::render('Favorites', [
+            'favorites' => $favorites,
+            'categories' => $categories,
+            'cartItemsCount' => $cartItemsCount
+        ]);
+    }
+
+    /**
+     * Display a list of the user's favorite items.
+     *
+     * @return \Inertia\Response
+     */
+
     /**
      * Add a product to the user's favorites.
      *
@@ -37,8 +59,13 @@ class FavoriteController extends Controller
     public function addFavorite(Product $product): RedirectResponse
     {
         try {
-            $this->favoriteService->add($product, Auth::user());
-            return redirect()->back()->with('success', 'Added to favorites!');
+            $added = $this->favoriteService->add($product, Auth::user());
+
+            if ($added) {
+                return redirect()->back()->with('success', 'Added to favorites!');
+            } else {
+                return redirect()->back()->with('info', 'Product is already in favorites.');
+            }
         } catch (\Exception $e) {
             logger()->error('Failed to add favorite: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to add to favorites. Please try again.');
@@ -54,29 +81,29 @@ class FavoriteController extends Controller
     public function removeFavorite(Product $product): RedirectResponse
     {
         try {
-            $this->favoriteService->removeFavorite($product, Auth::user());
-
-            // Redirect back with a success message.
-            return redirect()->back()->with('success', 'Removed from favorites!');
+            $removed = $this->favoriteService->removeFavorite($product, Auth::user());
+            if ($removed) {
+                return redirect()->back()->with('success', 'Removed from favorites!');
+            } else {
+                return redirect()->back()->with('info', 'Product was not in favorites.');
+            }
         } catch (\Exception $e) {
             logger()->error('Failed to remove favorite: ' . $e->getMessage());
-
-            // If an error occurs, redirect back with an error message.
             return redirect()->back()->with('error', 'Failed to remove from favorites. Please try again.');
         }
     }
 
-    /**
-     * Display a list of the user's favorite items.
-     *
-     * @return \Inertia\Response
-     */
-    public function getUserFavorites()
+    public function clear(): RedirectResponse
     {
-        $favoriteItems = Auth::user()->favoriteItems()->with('product')->get();
+        try {
+            $user = Auth::user();
+            $user->favoriteItems()->detach();
 
-        return Inertia::render('Favorites/Index', [
-            'favoriteItems' => $favoriteItems,
-        ]);
+            return redirect()->back()->with('success', 'All favorites cleared!');
+        } catch (\Exception $e) {
+            logger()->error('Failed to clear favorites: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to clear favorites. Please try again.');
+        }
     }
+
 }

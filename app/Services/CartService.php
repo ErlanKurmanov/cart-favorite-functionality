@@ -51,8 +51,8 @@ class CartService implements CartServiceInterface
     public function addItem(array $itemData): Cart
     {
         try {
-//            $cart = $this->cartRepository->getForUser(Auth::user());
-            $cart = User::find(1)->cart()->firstOrCreate();
+            $cart = $this->cartRepository->getForUser(Auth::user());
+//            $cart = User::find(1)->cart()->firstOrCreate();
             $this->mergeCartItem($cart, $itemData);
             return $cart;
 
@@ -72,8 +72,8 @@ class CartService implements CartServiceInterface
     public function removeItem(int $id): Cart
     {
         try {
-//            $cart = $this->cartRepository->getForUser(Auth::user());
-            $cart = User::find(1)->cart()->firstOrCreate();
+            $cart = $this->cartRepository->getForUser(Auth::user());
+//            $cart = User::find(1)->cart()->firstOrCreate();
 
             // Check if the item exists in the cart
 
@@ -98,8 +98,8 @@ class CartService implements CartServiceInterface
     {
         try {
             $user = User::find(1);
-            return $this->cartRepository->getForUser($user);
-//            return $this->cartRepository->getForUser(Auth::user());
+//            return $this->cartRepository->getForUser($user);
+            return $this->cartRepository->getForUser(Auth::user());
         } catch (\Exception $e) {
             \Log::error('Error retrieving cart: ' . $e->getMessage());
             throw $e;

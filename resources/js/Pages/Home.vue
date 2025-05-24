@@ -1,20 +1,17 @@
 <script>
 import { Link, router } from '@inertiajs/vue3'
 import ProductCard from '@/Components/ProductCard.vue'
+import Navbar from '@/Components/Navbar.vue'
 
 export default {
   name: 'ProductsPage',
   components: {
     Link,
-    ProductCard
+    ProductCard,
   },
   props: {
     products: Array,
-    categories: Array,
-    cartItemsCount: {
-      type: Number,
-      default: 0
-    }
+    categories: Array
   },
   data() {
     return {
@@ -42,6 +39,7 @@ export default {
         product_id: product.id,
         quantity: 1
       }, {
+        preserveScroll: true,
         onSuccess: () => {
           this.showMessage('Product added to cart!', 'success')
         },
@@ -56,6 +54,7 @@ export default {
       const url = isFavorite ? `/favorites/remove/${product.id}` : `/favorites/add/${product.id}`
       
       router.post(url, {}, {
+        preserveScroll: true,
         onSuccess: () => {
           product.is_favorite = !isFavorite
           const action = isFavorite ? 'removed from' : 'added to'
@@ -80,19 +79,18 @@ export default {
 
 <template>
   <div class="products-page">
-    <!-- Header -->
     <header class="header">
-      <div class="container">
+        <div class="container">
         <h1 class="logo">Shop</h1>
         <nav class="nav">
-          <Link href="/cart" class="cart-link">
-            Cart ({{ cartItemsCount }})
-          </Link>
-          <Link href="/favorites" class="favorites-link">
+            <Link href="/cart" class="cart-link">
+            Cart 
+            </Link>
+            <Link href="/favorites" class="favorites-link">
             Favorites
-          </Link>
+            </Link>
         </nav>
-      </div>
+        </div>
     </header>
 
     <main class="main">
@@ -289,7 +287,7 @@ export default {
 /* Message Styles */
 .message {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   padding: 1rem 1.5rem;
   border-radius: 5px;
