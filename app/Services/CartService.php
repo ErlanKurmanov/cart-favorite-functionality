@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -50,13 +51,11 @@ class CartService implements CartServiceInterface
     public function addItem(array $itemData): Cart
     {
         try {
-            $cart = $this->cartRepository->getForUser(Auth::user());
+//            $cart = $this->cartRepository->getForUser(Auth::user());
+            $cart = User::find(1)->cart()->firstOrCreate();
+            $this->mergeCartItem($cart, $itemData);
+            return $cart;
 
-            DB::transaction(function () use ($cart, $itemData) {
-                $this->mergeCartItem($cart, $itemData);
-            });
-
-            return $cart->fresh(['cartItems']);
         } catch (\Exception $e) {
             \Log::error('Error adding item to cart: ' . $e->getMessage());
             throw $e;
@@ -73,17 +72,13 @@ class CartService implements CartServiceInterface
     public function removeItem(int $id): Cart
     {
         try {
-            $cart = $this->cartRepository->getForUser(Auth::user());
+//            $cart = $this->cartRepository->getForUser(Auth::user());
+            $cart = User::find(1)->cart()->firstOrCreate();
 
             // Check if the item exists in the cart
-            $itemExists = $cart->cartItems()->where('product_id', $id)->exists();
-
-            if (!$itemExists) {
-                throw new CartItemNotFoundException("Cart item with product ID {$id} not found.");
-            }
 
             DB::transaction(function () use ($cart, $id) {
-                $cart->cartItems()->where('product_id', $id)->delete();
+                $cart->items()->where('product_id', $id)->delete();
             });
 
             return $cart->fresh(['cartItems']);
@@ -102,7 +97,9 @@ class CartService implements CartServiceInterface
     public function show(): Cart
     {
         try {
-            return $this->cartRepository->getForUser(Auth::user());
+            $user = User::find(1);
+            return $this->cartRepository->getForUser($user);
+//            return $this->cartRepository->getForUser(Auth::user());
         } catch (\Exception $e) {
             \Log::error('Error retrieving cart: ' . $e->getMessage());
             throw $e;
@@ -121,7 +118,7 @@ class CartService implements CartServiceInterface
      */
     protected function mergeCartItem(Cart $cart, array $itemData): void
     {
-        $existingItem = $cart->cartItems()
+        $existingItem = $cart->items()
             ->where('product_id', $itemData['product_id'])
             ->first();
 
@@ -129,11 +126,10 @@ class CartService implements CartServiceInterface
             $existingItem->update(
                 [
                     'quantity' => $existingItem->quantity + $itemData['quantity'],
-                    'options' => $itemData['options'] ?? $existingItem->options,
                 ]
             );
         } else {
-            $cart->cartItems()->create($itemData);
+            $cart->items()->create($itemData);
         }
     }
 }

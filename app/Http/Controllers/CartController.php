@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request; // We'll use a more generic Request for some actions
 use Illuminate\Http\Response; // Still useful for certain HTTP status codes, though less common with Inertia.
 
@@ -39,8 +40,7 @@ class CartController extends Controller
     {
         try {
             $cart = $this->cartService->show();
-
-            return Inertia::render('Cart/Index', [
+            return Inertia::render('Cart', [
                 'cart' => new CartResource($cart), // Transform cart data using your resource
                 'successMessage' => session('success'), // Example: flash messages for success
                 'errorMessage' => session('error'),     // Example: flash messages for errors
@@ -48,11 +48,12 @@ class CartController extends Controller
         } catch (\Exception $e) {
             // For errors that prevent rendering, you might redirect back with an error message
             // or render a generic error page.
-            return Inertia::render('Error', [ // Assuming you have an Error.vue component
-                'message' => 'Failed to retrieve cart. Please try again.',
-                'status' => Response::HTTP_INTERNAL_SERVER_ERROR,
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ]);
+//            return Inertia::render('Error', [ // Assuming you have an Error.vue component
+//                'message' => 'Failed to retrieve cart. Please try again.',
+//                'status' => Response::HTTP_INTERNAL_SERVER_ERROR,
+//                'debug' => config('app.debug') ? $e->getMessage() : null,
+//            ]);
+            dd($e->getMessage(), $e->getTraceAsString());
         }
     }
 
@@ -63,13 +64,15 @@ class CartController extends Controller
      * @param AddCartItemRequest $request The request containing item data.
      * @return \Illuminate\Http\RedirectResponse Redirects back or to a specific page.
      */
-    public function addItem(AddCartItemRequest $request): \Illuminate\Http\RedirectResponse
+    public function addItem(AddCartItemRequest $request)
     {
         try {
             $itemData = $request->validated();
+
             $cart = $this->cartService->addItem($itemData);
 
-            return redirect()->route('cart.index')->with('success', 'Item added to cart successfully!');
+//            return redirect()->route('cart.index')->with('success', 'Item added to cart successfully!');
+
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
                 'cart_add_error' => config('app.debug') ? $e->getMessage() : 'Failed to add item to cart. Please try again.',
@@ -84,11 +87,11 @@ class CartController extends Controller
      * @param int $id The ID of the item to remove.
      * @return \Illuminate\Http\RedirectResponse Redirects back or to a specific page.
      */
-    public function removeItem(int $id): \Illuminate\Http\RedirectResponse
+    public function removeItem(int $id)
     {
         try {
             $cart = $this->cartService->removeItem($id);
-            return redirect()->route('cart.index')->with('success', 'Item removed from cart successfully!');
+//            return redirect()->route('cart.index')->with('success', 'Item removed from cart successfully!');
         } catch (\Exception $e) {
             // Redirect back with an error message
             return redirect()->back()->withErrors([
@@ -97,28 +100,26 @@ class CartController extends Controller
         }
     }
 
-    // You might also have a 'updateItem' method for changing quantities, similar to 'addItem'
-    // public function updateItem(UpdateCartItemRequest $request, int $id): \Illuminate\Http\RedirectResponse
-    // {
-    //     try {
-    //         $itemData = $request->validated();
-    //         $cart = $this->cartService->updateItem($id, $itemData);
-    //         return redirect()->route('cart.index')->with('success', 'Cart updated successfully!');
-    //     } catch (\Exception $e) {
-    //         return redirect()->back()->withErrors(['cart_update_error' => 'Failed to update item.']);
-    //     }
-    // }
+     public function updateItem(Request $request, int $id)
+     {
+         try {
+             $itemData = $request->validate([
+                 'quantity' => 'required'
+             ]);
 
-    // If you need a full cart synchronization, you might use it like this,
-    // though typically `addItem`, `removeItem`, `updateItem` are more common.
-    // public function sync(SyncCartRequest $request): \Illuminate\Http\RedirectResponse
-    // {
-    //     try {
-    //         $cartData = $request->validated();
-    //         $cart = $this->cartService->syncCart($cartData);
-    //         return redirect()->route('cart.index')->with('success', 'Cart synchronized successfully!');
-    //     } catch (\Exception $e) {
-    //         return redirect()->back()->withErrors(['cart_sync_error' => 'Failed to synchronize cart.']);
-    //     }
-    // }
+             $cart = User::find(1)->cart()->firstOrCreate();
+             $cart->items()->find($id)->update([
+                 'quantity' => $itemData['quantity']
+             ]);
+//             return redirect()->route('cart.index')->with('success', 'Cart updated successfully!');
+         } catch (\Exception $e) {
+             return redirect()->back()->withErrors(['cart_update_error' => 'Failed to update item.']);
+         }
+     }
+
+    public function clearAll()
+    {
+        $cart = User::find(1)->cart()->firstOrCreate();
+        $cart->items()->delete();
+   }
 }

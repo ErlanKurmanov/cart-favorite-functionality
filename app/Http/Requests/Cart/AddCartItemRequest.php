@@ -18,10 +18,7 @@ class AddCartItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => [
-                'required',
-                Rule::exists('products', 'id')->where('is_available', true)
-            ],
+            'product_id' => 'required',
             'quantity' => 'required|integer|min:1',
         ];
     }

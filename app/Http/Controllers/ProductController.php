@@ -28,11 +28,14 @@ class ProductController extends Controller
     public function index(): Response
     {
         $products = $this->productService->getAllProducts();
-
-
-        return Inertia::render('Products/Index', [
-            'products' => ProductResource::collection($products),
+//        dd($products);
+        return Inertia::render('Home', [
+            'products' => $products
         ]);
+
+//        return Inertia::render('Pages/Home', [
+//            'products' => ProductResource::collection($products),
+//        ]);
     }
 
     /**
@@ -46,7 +49,7 @@ class ProductController extends Controller
         try {
             $products = $this->productService->getProductsByCategory($id);
 
-            return Inertia::render('Products/ByCategory', [
+            return Inertia::render('', [
                 'products' => ProductResource::collection($products),
                 'categoryId' => $id, // Passing category ID might be useful for the Vue component
             ]);
@@ -67,7 +70,7 @@ class ProductController extends Controller
         try {
             $product = $this->productService->getProductById($id);
 
-            return Inertia::render('Products/Show', [
+            return Inertia::render('', [
                 'product' => new ProductResource($product), // Single resource
             ]);
         } catch (ModelNotFoundException $e) {
