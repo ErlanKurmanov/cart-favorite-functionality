@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CartCleared;
+use App\Events\ItemRemovedFromCart;
+use App\Events\ItemUpdatedInCart;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -84,13 +87,20 @@ class CartController extends Controller
      * Removes an item from the cart.
      * This action will typically redirect back or to another page after completion.
      *
-     * @param int $id The ID of the item to remove.
+     * @param int $id The ID of the cart item (not product ID) to remove.
      * @return \Illuminate\Http\RedirectResponse Redirects back or to a specific page.
      */
     public function removeItem(int $id)
     {
         try {
             $cart = $this->cartService->removeItem($id);
+
+            // Fire event for Pusher notification
+            Event::dispatch(new ItemRemovedFromCart(
+                Auth::user(),
+                $cart
+            ));
+
             return redirect()->back()->with('success', 'Item removed from cart successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
@@ -111,6 +121,13 @@ class CartController extends Controller
                 'quantity' => $itemData['quantity']
             ]);
 
+            // Fire event for Pusher notification
+            Event::dispatch(new ItemUpdatedInCart(
+                Auth::user(),
+                $itemData,
+                $cart
+            ));
+
             return redirect()->back()->with('success', 'Cart updated successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['cart_update_error' => 'Failed to update item.']);
@@ -122,6 +139,13 @@ class CartController extends Controller
         try {
             $cart = Auth::user()->cart()->firstOrCreate();
             $cart->items()->delete();
+
+            // Fire event for Pusher notification
+            Event::dispatch(new CartCleared(
+                Auth::user(),
+                $cart
+            ));
+
             return redirect()->back()->with('success', 'Cart cleared successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['cart_clear_error' => 'Failed to clear cart.']);

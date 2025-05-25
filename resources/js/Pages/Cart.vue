@@ -38,17 +38,17 @@ export default {
           this.handleCartNotification(data, 'Item added to cart!')
         })
         
-        // this.pusherChannel.listen('.item.updated', (data) => {
-        //   this.handleCartNotification(data, 'Cart updated!')
-        // })
+        this.pusherChannel.listen('.item.updated', (data) => {
+          this.handleCartNotification(data, 'Cart updated!')
+        })
         
-        // this.pusherChannel.listen('.item.removed', (data) => {
-        //   this.handleCartNotification(data, 'Item removed from cart!')
-        // })
+        this.pusherChannel.listen('.item.removed', (data) => {
+          this.handleCartNotification(data, 'Item removed from cart!')
+        })
         
-        // this.pusherChannel.listen('.cart.cleared', (data) => {
-        //   this.handleCartNotification(data, 'Cart cleared!')
-        // })
+        this.pusherChannel.listen('.cart.cleared', (data) => {
+          this.handleCartNotification(data, 'Cart cleared!')
+        })
         
         console.log('Pusher initialized for cart page')
       }
@@ -91,12 +91,14 @@ export default {
 
     removeItem(item) {
       if (confirm('Are you sure you want to remove this item from your cart?')) {
-        router.delete(`/cart/remove/${item.product_id}`, {
+        // Use item.id instead of item.product_id
+        router.delete(`/cart/remove/${item.id}`, {
           preserveScroll: true,
           onSuccess: () => {
             // Notification will come from Pusher
           },
-          onError: () => {
+          onError: (errors) => {
+            console.error('Remove item errors:', errors)
             this.showMessage('Failed to remove item', 'error')
           }
         })
