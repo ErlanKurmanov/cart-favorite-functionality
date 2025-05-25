@@ -35,12 +35,12 @@ class FavoriteController extends Controller
 
         $favorites = $user->favoriteItems()->with('category')->get();
         $categories = Category::all();
-        $cartItemsCount = optional($user->cart)->items->sum('quantity') ?? 0;
+//        $cartItemsCount = optional($user->cart)->items->sum('quantity') ?? 0;
 
         return Inertia::render('Favorites', [
             'favorites' => $favorites,
             'categories' => $categories,
-            'cartItemsCount' => $cartItemsCount
+//            'cartItemsCount' => $cartItemsCount
         ]);
     }
 
