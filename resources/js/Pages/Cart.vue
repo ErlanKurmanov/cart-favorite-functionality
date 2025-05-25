@@ -90,15 +90,22 @@ export default {
     },
 
     removeItem(item) {
+      console.log('Removing item:', {
+        id: item.id,
+        name: item.name,
+        fullItem: item
+      });
+      
       if (confirm('Are you sure you want to remove this item from your cart?')) {
-        // Use item.id instead of item.product_id
         router.delete(`/cart/remove/${item.id}`, {
           preserveScroll: true,
-          onSuccess: () => {
+          onSuccess: (response) => {
+            console.log('Remove success:', response);
             // Notification will come from Pusher
           },
           onError: (errors) => {
-            console.error('Remove item errors:', errors)
+            console.error('Remove item errors:', errors);
+            console.error('Full error object:', errors);
             this.showMessage('Failed to remove item', 'error')
           }
         })
@@ -138,7 +145,7 @@ export default {
     <!-- Header -->
     <header class="header">
       <div class="container">
-        <Link href="/" class="back-link">
+        <Link href="/home" class="back-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="m15 18-6-6 6-6"/>
           </svg>
@@ -263,7 +270,7 @@ export default {
             </svg>
             <h2>Your cart is empty</h2>
             <p>Add some products to get started!</p>
-            <Link href="/" class="shop-now-btn">
+            <Link href="/home" class="shop-now-btn">
               Start Shopping
             </Link>
           </div>

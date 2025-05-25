@@ -107,7 +107,7 @@ export default {
     <header class="header">
       <div class="container">
         <h1 class="logo">
-          <Link href="/">Shop</Link>
+          <Link href="/home">Shop</Link>
         </h1>
         <nav class="nav">
           <Link href="/cart" class="cart-link">
@@ -161,7 +161,7 @@ export default {
             <div class="empty-icon">♡</div>
             <h2>No favorites yet</h2>
             <p>Products you favorite will appear here for easy access.</p>
-            <Link href="/" class="browse-products-btn">
+            <Link href="/home" class="browse-products-btn">
               Browse Products
             </Link>
           </div>

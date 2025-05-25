@@ -137,6 +137,14 @@ export default {
         <div class="container">
         <h1 class="logo">Shop</h1>
         <nav class="nav">
+            <Link href="/dashboard" class="dashboard-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3h18v18H3V3z"></path>
+                <path d="M9 9h6v6H9V9z"></path>
+              </svg>
+              Dashboard/Profile
+            </Link>
+
             <Link href="/cart" class="cart-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="9" cy="21" r="1"></circle>

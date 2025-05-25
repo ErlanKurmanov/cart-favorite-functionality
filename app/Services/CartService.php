@@ -69,23 +69,22 @@ class CartService implements CartServiceInterface
      * @return Cart The updated shopping cart instance for the authenticated user.
      * @throws \Exception If there is an error during the removal process.
      */
-    public function removeItem(int $id): Cart
+    public function removeItem($itemId)
     {
-        try {
-            $cart = $this->cartRepository->getForUser(Auth::user());
-//            $cart = User::find(1)->cart()->firstOrCreate();
+        $user = Auth::user();
+        $cart = $user->cart()->firstOrCreate();
 
-            // Check if the item exists in the cart
+        // Find and remove the cart item
+        $cartItem = $cart->items()->find($itemId);
 
-            DB::transaction(function () use ($cart, $id) {
-                $cart->items()->where('product_id', $id)->delete();
-            });
-
-            return $cart->fresh(['cartItems']);
-        } catch (\Exception $e) {
-            \Log::error('Error removing item from cart: ' . $e->getMessage());
-            throw $e;
+        if (!$cartItem) {
+            throw new \Exception('Cart item not found');
         }
+
+        $cartItem->delete();
+
+        // Return fresh cart with correct relationship name
+        return $cart->fresh(['items']); // Change from 'cartItems' to 'items'
     }
 
     /**

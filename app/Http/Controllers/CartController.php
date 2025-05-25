@@ -93,6 +93,27 @@ class CartController extends Controller
     public function removeItem(int $id)
     {
         try {
+            // Add debugging
+            \Log::info('Attempting to remove cart item', [
+                'item_id' => $id,
+                'user_id' => Auth::id()
+            ]);
+
+            // Check if cart item exists and belongs to user
+            $user = Auth::user();
+            $cart = $user->cart()->first();
+
+            if (!$cart) {
+                throw new \Exception('Cart not found for user');
+            }
+
+            $cartItem = $cart->items()->find($id);
+
+            if (!$cartItem) {
+                throw new \Exception('Cart item not found');
+            }
+
+            // Use the service to remove the item
             $cart = $this->cartService->removeItem($id);
 
             // Fire event for Pusher notification
@@ -102,7 +123,16 @@ class CartController extends Controller
             ));
 
             return redirect()->back()->with('success', 'Item removed from cart successfully!');
+
         } catch (\Exception $e) {
+            // Log the actual error
+            \Log::error('Failed to remove cart item', [
+                'item_id' => $id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return redirect()->back()->withErrors([
                 'cart_remove_error' => config('app.debug') ? $e->getMessage() : 'Failed to remove item from cart. Please try again.',
             ]);
