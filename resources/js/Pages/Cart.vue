@@ -38,17 +38,17 @@ export default {
           this.handleCartNotification(data, 'Item added to cart!')
         })
         
-        this.pusherChannel.listen('.item.updated', (data) => {
-          this.handleCartNotification(data, 'Cart updated!')
-        })
+        // this.pusherChannel.listen('.item.updated', (data) => {
+        //   this.handleCartNotification(data, 'Cart updated!')
+        // })
         
-        this.pusherChannel.listen('.item.removed', (data) => {
-          this.handleCartNotification(data, 'Item removed from cart!')
-        })
+        // this.pusherChannel.listen('.item.removed', (data) => {
+        //   this.handleCartNotification(data, 'Item removed from cart!')
+        // })
         
-        this.pusherChannel.listen('.cart.cleared', (data) => {
-          this.handleCartNotification(data, 'Cart cleared!')
-        })
+        // this.pusherChannel.listen('.cart.cleared', (data) => {
+        //   this.handleCartNotification(data, 'Cart cleared!')
+        // })
         
         console.log('Pusher initialized for cart page')
       }
