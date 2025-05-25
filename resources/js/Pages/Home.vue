@@ -1,23 +1,28 @@
 <script>
 import { Link, router } from '@inertiajs/vue3'
 import ProductCard from '@/Components/ProductCard.vue'
-import Navbar from '@/Components/Navbar.vue'
+import NotificationToast from '@/Components/NotificationToast.vue'
 
 export default {
   name: 'ProductsPage',
   components: {
     Link,
     ProductCard,
+    NotificationToast,
   },
   props: {
     products: Array,
-    categories: Array
+    categories: Array,
+    auth: Object
   },
   data() {
     return {
       selectedCategory: null,
       message: '',
-      messageType: 'success'
+      messageType: 'success',
+      showNotification: false,
+      cartCount: 0,
+      pusherChannel: null
     }
   },
   computed: {
@@ -28,7 +33,52 @@ export default {
       return this.products.filter(product => product.category_id === this.selectedCategory)
     }
   },
+  mounted() {
+    this.initializePusher()
+  },
+  beforeUnmount() {
+    this.disconnectPusher()
+  },
   methods: {
+    initializePusher() {
+      if (window.Echo && this.auth?.user) {
+        // Subscribe to private channel for the authenticated user
+        this.pusherChannel = window.Echo.private(`cart.${this.auth.user.id}`)
+        
+        // Listen for item added to cart events
+        this.pusherChannel.listen('.item.added', (data) => {
+          this.handleCartNotification(data)
+        })
+        
+        console.log('Pusher initialized for user:', this.auth.user.id)
+      }
+    },
+    
+    disconnectPusher() {
+      if (this.pusherChannel) {
+        window.Echo.leave(`cart.${this.auth.user.id}`)
+        this.pusherChannel = null
+      }
+    },
+    
+    handleCartNotification(data) {
+      this.cartCount = data.cart_count || 0
+      this.showMessage(data.message || 'Item added to cart!', 'success')
+      
+      // Optional: Add visual feedback like cart icon animation
+      this.animateCartIcon()
+    },
+    
+    animateCartIcon() {
+      const cartLink = document.querySelector('.cart-link')
+      if (cartLink) {
+        cartLink.classList.add('cart-bounce')
+        setTimeout(() => {
+          cartLink.classList.remove('cart-bounce')
+        }, 600)
+      }
+    },
+
     getCategoryName(categoryId) {
       const category = this.categories.find(cat => cat.id === categoryId)
       return category ? category.name : ''
@@ -41,7 +91,8 @@ export default {
       }, {
         preserveScroll: true,
         onSuccess: () => {
-          this.showMessage('Product added to cart!', 'success')
+          // The success message will now come from Pusher
+          // this.showMessage('Product added to cart!', 'success')
         },
         onError: () => {
           this.showMessage('Failed to add product to cart', 'error')
@@ -69,9 +120,12 @@ export default {
     showMessage(text, type = 'success') {
       this.message = text
       this.messageType = type
-      setTimeout(() => {
-        this.message = ''
-      }, 3000)
+      this.showNotification = true
+    },
+    
+    closeNotification() {
+      this.showNotification = false
+      this.message = ''
     }
   }
 }
@@ -84,10 +138,19 @@ export default {
         <h1 class="logo">Shop</h1>
         <nav class="nav">
             <Link href="/cart" class="cart-link">
-            Cart 
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              Cart
+              <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
             </Link>
             <Link href="/favorites" class="favorites-link">
-            Favorites
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+              </svg>
+              Favorites
             </Link>
         </nav>
         </div>
@@ -140,13 +203,15 @@ export default {
       </div>
     </main>
 
-    <!-- Success/Error Messages -->
-    <div v-if="message" :class="['message', messageType]">
-      {{ message }}
-    </div>
+    <!-- Notification Toast -->
+    <NotificationToast 
+      :show="showNotification"
+      :message="message"
+      :type="messageType"
+      @close="closeNotification"
+    />
   </div>
 </template>
-
 
 <style scoped>
 /* Global Styles */
@@ -198,6 +263,9 @@ export default {
 }
 
 .cart-link, .favorites-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
   color: #3498db;
   font-weight: 500;
@@ -205,11 +273,45 @@ export default {
   border: 2px solid #3498db;
   border-radius: 5px;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .cart-link:hover, .favorites-link:hover {
   background-color: #3498db;
   color: white;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Cart Animation */
+@keyframes cartBounce {
+  0%, 20%, 60%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  80% {
+    transform: translateY(-5px);
+  }
+}
+
+.cart-bounce {
+  animation: cartBounce 0.6s ease;
 }
 
 /* Main Content */
@@ -282,38 +384,6 @@ export default {
 .no-products p {
   font-size: 1.2rem;
   color: #6c757d;
-}
-
-/* Message Styles */
-.message {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 1rem 1.5rem;
-  border-radius: 5px;
-  color: white;
-  font-weight: 500;
-  z-index: 1000;
-  animation: slideIn 0.3s ease;
-}
-
-.message.success {
-  background-color: #27ae60;
-}
-
-.message.error {
-  background-color: #e74c3c;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
 }
 
 /* Responsive Design */

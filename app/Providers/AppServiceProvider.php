@@ -10,6 +10,7 @@ use App\Repositories\CartRepository;
 use App\Services\CartService;
 use App\Services\FavoriteService;
 use App\Services\ProductService;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,6 +32,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Broadcast::routes();
     }
 }

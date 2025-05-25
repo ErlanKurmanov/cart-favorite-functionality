@@ -9,12 +9,13 @@ Route::get('/', [ProductController::class, 'index']);
 //Route::get('/', function () {
 //    return Inertia::render('Home');
 //});
-
-Route::get('/cart', [CartController::class, 'index']);
-Route::post('/cart/add', [CartController::class, 'addItem']);
-Route::patch('/cart/update/{id}', [CartController::class, 'updateItem']);
-Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem']);
-Route::delete('/cart/clear', [CartController::class, 'clearAll']);
+Route::middleware(['auth'])->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.add');
+    Route::post('/cart/add', [CartController::class, 'addItem']);
+    Route::patch('/cart/update/{id}', [CartController::class, 'updateItem']);
+    Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem']);
+    Route::delete('/cart/clear', [CartController::class, 'clearAll']);
+});
 
 Route::get('/favorites', [FavoriteController::class, 'index']);
 Route::post('/favorites/add/{product}', [FavoriteController::class, 'addFavorite']);

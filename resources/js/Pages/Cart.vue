@@ -1,29 +1,77 @@
 <script>
 import { Link, router } from '@inertiajs/vue3'
+import NotificationToast from '@/Components/NotificationToast.vue'
 
 export default {
   name: 'CartPage',
   components: {
-    Link
+    Link,
+    NotificationToast
   },
   props: {
-    cart: Object
+    cart: Object,
+    auth: Object
   },
   data() {
     return {
       orderComments: '',
       message: '',
-      messageType: 'success'
+      messageType: 'success',
+      showNotification: false,
+      pusherChannel: null
     }
   },
+  mounted() {
+    this.initializePusher()
+  },
+  beforeUnmount() {
+    this.disconnectPusher()
+  },
   methods: {
+    initializePusher() {
+      if (window.Echo && this.auth?.user) {
+        // Subscribe to private channel for the authenticated user
+        this.pusherChannel = window.Echo.private(`cart.${this.auth.user.id}`)
+        
+        // Listen for various cart events
+        this.pusherChannel.listen('.item.added', (data) => {
+          this.handleCartNotification(data, 'Item added to cart!')
+        })
+        
+        this.pusherChannel.listen('.item.updated', (data) => {
+          this.handleCartNotification(data, 'Cart updated!')
+        })
+        
+        this.pusherChannel.listen('.item.removed', (data) => {
+          this.handleCartNotification(data, 'Item removed from cart!')
+        })
+        
+        this.pusherChannel.listen('.cart.cleared', (data) => {
+          this.handleCartNotification(data, 'Cart cleared!')
+        })
+        
+        console.log('Pusher initialized for cart page')
+      }
+    },
+    
+    disconnectPusher() {
+      if (this.pusherChannel) {
+        window.Echo.leave(`cart.${this.auth.user.id}`)
+        this.pusherChannel = null
+      }
+    },
+    
+    handleCartNotification(data, defaultMessage) {
+      // Refresh the page data to show updated cart
+      router.reload({ only: ['cart'] })
+      
+      // Show notification
+      this.showMessage(data.message || defaultMessage, 'success')
+    },
+
     formatPrice(price) {
       return parseFloat(price).toFixed(2)
     },
-
-    // handleImageError(event) {
-    //   event.target.src = '/images/placeholder.jpg'
-    // },
 
     updateQuantity(item, newQuantity) {
       if (newQuantity < 1) return
@@ -33,7 +81,7 @@ export default {
       }, {
         preserveScroll: true,
         onSuccess: () => {
-          this.showMessage('Cart updated successfully', 'success')
+          // Notification will come from Pusher
         },
         onError: () => {
           this.showMessage('Failed to update cart', 'error')
@@ -46,7 +94,7 @@ export default {
         router.delete(`/cart/remove/${item.product_id}`, {
           preserveScroll: true,
           onSuccess: () => {
-            this.showMessage('Item removed from cart', 'success')
+            // Notification will come from Pusher
           },
           onError: () => {
             this.showMessage('Failed to remove item', 'error')
@@ -57,10 +105,10 @@ export default {
 
     clearCart() {
       if (confirm('Are you sure you want to clear your entire cart?')) {
-        preserveScroll: true,
         router.delete('/cart/clear', {
+          preserveScroll: true,
           onSuccess: () => {
-            this.showMessage('Cart cleared successfully', 'success')
+            // Notification will come from Pusher
           },
           onError: () => {
             this.showMessage('Failed to clear cart', 'error')
@@ -72,14 +120,14 @@ export default {
     showMessage(text, type = 'success') {
       this.message = text
       this.messageType = type
-      setTimeout(() => {
-        this.message = ''
-      }, 3000)
+      this.showNotification = true
+    },
+    
+    closeNotification() {
+      this.showNotification = false
+      this.message = ''
     }
-  },
-    // mounted() {
-    // console.log(this.cart)
-    // }
+  }
 }
 </script>
 
@@ -170,15 +218,36 @@ export default {
                     <path d="M10 11v6m4-6v6"/>
                   </svg>
                 </button>
-
-                
               </div>
+              
               <button @click="clearCart" class="clear-cart-btn">
-                  Clear Cart
-                </button>
+                Clear Cart
+              </button>
             </div>
           </div>
 
+          <!-- Cart Summary -->
+          <div class="cart-summary">
+            <div class="summary-content">
+              <h3>Order Summary</h3>
+              <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>${{ formatPrice(cart.data.subtotal || 0) }}</span>
+              </div>
+              <div class="summary-row">
+                <span>Tax:</span>
+                <span>${{ formatPrice(cart.data.tax || 0) }}</span>
+              </div>
+              <div class="summary-row total">
+                <span>Total:</span>
+                <span>${{ formatPrice(cart.data.total || 0) }}</span>
+              </div>
+              
+              <button class="checkout-btn">
+                Proceed to Checkout
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Empty Cart State -->
@@ -200,14 +269,15 @@ export default {
       </div>
     </main>
 
-    <!-- Success/Error Messages -->
-    <div v-if="message" :class="['message', messageType]">
-      {{ message }}
-    </div>
+    <!-- Notification Toast -->
+    <NotificationToast 
+      :show="showNotification"
+      :message="message"
+      :type="messageType"
+      @close="closeNotification"
+    />
   </div>
 </template>
-
-
 
 <style scoped>
 /* Global Styles */
@@ -295,7 +365,7 @@ export default {
 
 .cart-item {
   display: grid;
-  grid-template-columns: 80px;
+  grid-template-columns: 80px 1fr auto auto auto;
   gap: 1rem;
   align-items: center;
   padding: 1rem 0;
@@ -374,31 +444,75 @@ export default {
   color: #a71d2a;
 }
 
-
-.clear-cart-btn,
-.continue-shopping-btn {
+.clear-cart-btn {
   display: block;
   width: 100%;
-  margin-top: 0.5rem;
+  margin-top: 1rem;
   text-align: center;
   padding: 0.5rem 1rem;
   font-weight: 500;
   border-radius: 8px;
-  text-decoration: none;
-  transition: background 0.3s ease;
-}
-
-.clear-cart-btn {
   background: #dc3545;
   color: white;
   border: none;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
 
 .clear-cart-btn:hover {
   background: #c82333;
 }
 
+/* Cart Summary */
+.cart-summary {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  height: fit-content;
+}
+
+.summary-content {
+  padding: 1.5rem;
+}
+
+.summary-content h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.summary-row.total {
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-top: 1px solid #e9ecef;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.checkout-btn {
+  width: 100%;
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 1rem;
+}
+
+.checkout-btn:hover {
+  background: #218838;
+}
 
 /* Empty Cart */
 .empty-cart {
@@ -429,23 +543,27 @@ export default {
   background: #0056b3;
 }
 
-/* Message Styles */
-.message {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  color: white;
-  font-weight: bold;
-  z-index: 1000;
-}
-
-.message.success {
-  background-color: #28a745;
-}
-
-.message.error {
-  background-color: #dc3545;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cart-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .cart-item {
+    grid-template-columns: 60px 1fr auto;
+    gap: 0.5rem;
+  }
+  
+  .quantity-controls {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 0.5rem;
+  }
+  
+  .item-total {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 0.5rem;
+  }
 }
 </style>
